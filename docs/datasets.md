@@ -28,6 +28,7 @@ spójne — pilnuje tego test `tests/test_registry.py`. Zespół nie edytuje ża
 | `bank_marketing` | Bank Marketing (`bank-full`) | marketing usług | 45 211 | `y` (`yes`) | 11,7% | `time_ordered` |
 | `iranian_churn` | Iranian Churn | klient / usługa | 3 150 | `Churn` (`1`) | 495 / 3150 = 15,71% | `stratified_random` |
 | `online_shoppers` | Online Shoppers Purchasing Intention | e-commerce | 12 330 | `Revenue` (`true`) | 15,5% | `stratified_random` |
+| `secondary_mushrooms` | Secondary Mushroom | biologia / dane symulowane | 61 069 | `class` (`p`) | 33 888 / 61 069 | `stratified_random` |
 
 Dane pobiera skrypt `python scripts/download_data.py`. Zapisuje on plik do `data/01_raw/<id>/`
 (poza gitem) razem z `fingerprint.json` (SHA-256 pliku) i wypisuje rozkład klas.
@@ -278,6 +279,73 @@ odwiedzonych przed transakcją, ale nie mówi, czy obejmuje transakcję z bież�
   więc split `stratified_random` nie miesza tych samych osób między treningiem i testem.
 
 ---
+
+## `secondary_mushrooms` — Secondary Mushroom
+
+- **Problem:** klasyfikacja hipotetycznego grzyba jako jadalnego albo trującego / o nieznanej
+  jadalności i nierekomendowanego do spożycia.
+- **Źródło:** UCI Machine Learning Repository,
+  https://archive.ics.uci.edu/dataset/848/secondary+mushroom+dataset,
+  DOI https://doi.org/10.24432/C5FP5Q.
+- **Licencja:** CC BY 4.0 (wymagane uznanie autorstwa).
+- **Pobieranie:** archiwum
+  https://archive.ics.uci.edu/static/public/848/secondary+mushroom+dataset.zip,
+  plik `secondary_data.csv`.
+- **Target:** `class`. **Klasa pozytywna:** `p`.
+- **Moment predykcji:** predykcja dla pojedynczego grzyba na podstawie jego cech
+  morfologicznych i środowiskowych dostępnych w momencie obserwacji, przed poznaniem etykiety
+  jadalności.
+- **Liczba rekordów w pobieranym pliku:** 61 069.
+- **Rozkład targetu:** `p` = 33 888, `e` = 27 181.
+
+ALLOWED FEATURES:
+
+| Kolumna | Typ wejścia | Uwagi |
+|---|---|---|
+| `cap-diameter` | numeryczna | średnica kapelusza |
+| `cap-shape` | kategoryczna | kształt kapelusza |
+| `cap-surface` | kategoryczna | powierzchnia kapelusza; zawiera braki |
+| `cap-color` | kategoryczna | kolor kapelusza |
+| `does-bruise-or-bleed` | kategoryczna | informacja o sinieniu / krwawieniu |
+| `gill-attachment` | kategoryczna | sposób przyczepienia blaszek; zawiera braki |
+| `gill-spacing` | kategoryczna | odstępy między blaszkami; zawiera braki |
+| `gill-color` | kategoryczna | kolor blaszek |
+| `stem-height` | numeryczna | wysokość trzonu |
+| `stem-width` | numeryczna | szerokość trzonu |
+| `stem-root` | kategoryczna | typ podstawy trzonu; zawiera braki |
+| `stem-surface` | kategoryczna | powierzchnia trzonu; zawiera braki |
+| `stem-color` | kategoryczna | kolor trzonu |
+| `veil-type` | kategoryczna | typ osłony; zawiera dużo braków |
+| `veil-color` | kategoryczna | kolor osłony; zawiera dużo braków |
+| `has-ring` | kategoryczna | obecność pierścienia |
+| `ring-type` | kategoryczna | typ pierścienia; zawiera braki |
+| `spore-print-color` | kategoryczna | kolor wysypu zarodników; zawiera dużo braków |
+| `habitat` | kategoryczna | siedlisko |
+| `season` | kategoryczna | pora roku |
+
+EXCLUDED FEATURES:
+
+Brak dodatkowych kolumn wykluczonych przez kontrakt kursu. Target `class` nie może być używany
+jako cecha.
+
+**Istotne ograniczenia:**
+
+- Dane są symulowane na podstawie informacji o gatunkach grzybów i nie są obserwacjami
+  rzeczywistych egzemplarzy zebranych w terenie.
+- Klasa `p` obejmuje zarówno grzyby trujące, jak i przypadki o nieznanej jadalności,
+  których nie rekomendowano do spożycia.
+- Kilka cech kategorycznych zawiera dużą liczbę braków. Zespół musi przeanalizować je w EDA
+  i zdecydować, jak traktować je w model preprocessing.
+- Model z tego projektu jest ćwiczeniem dydaktycznym i nie może być przedstawiany jako narzędzie
+  do podejmowania rzeczywistych decyzji o bezpiecznym spożyciu grzybów.
+
+**Ryzyka splitu / leakage:**
+
+- W projekcie stosujemy `stratified_random`, ponieważ zadaniem jest klasyfikacja pojedynczych
+  obserwacji, a dostępny plik nie zawiera identyfikatora egzemplarza ani grupy wymagającej
+  group-aware splitu.
+- Wszystkie kolumny wejściowe opisują cechy grzyba lub jego środowisko. Target `class` pozostaje
+  poza X.
 
 ## Rezerwowe (nie są na liście dla studentów)
 

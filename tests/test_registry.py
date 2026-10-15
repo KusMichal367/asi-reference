@@ -4,7 +4,7 @@ from asi_project.config import SPLIT_STRATEGIES
 
 
 def test_registry_lists_approved_datasets(registry):
-    assert 3 <= len(registry) <= 4, "Lista dla studentów ma 3–4 datasety."
+    assert 3 <= len(registry) <= 5, "Lista dla studentów ma 3–5 datasetów."
 
 
 def test_every_contract_is_internally_consistent(registry):
