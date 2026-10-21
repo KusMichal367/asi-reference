@@ -88,6 +88,49 @@ def test_default_input_normalization_rules_and_idempotence(toy_frame):
     assert normalized["num"].equals(toy_frame["num"])
     pd.testing.assert_frame_equal(normalize_input(normalized), normalized)
 
+def test_input_normalization_single_record_matches_batch(toy_frame):
+    batch = normalize_input(toy_frame)
+    for position in range(len(toy_frame)):
+        single = normalize_input(toy_frame.iloc[[position]])
+        pd.testing.assert_frame_equal(single, batch.iloc[[position]], check_dtype=False)
+
+
+def test_input_normalization_does_not_mutate_input(toy_frame):
+    before = toy_frame.copy(deep=True)
+    normalize_input(toy_frame)
+    pd.testing.assert_frame_equal(toy_frame, before)
+
+
+def test_input_normalization_leaves_numeric_churn_record_unchanged():
+    record = pd.DataFrame(
+        [
+            {
+                "Call Failure": 8,
+                "Complains": 0,
+                "Subscription Length": 38,
+                "Charge Amount": 0,
+                "Seconds of Use": 4370,
+                "Frequency of use": 71,
+                "Frequency of SMS": 5,
+                "Distinct Called Numbers": 17,
+                "Age Group": 3,
+                "Tariff Plan": 1,
+                "Status": 1,
+                "Age": 30,
+                "Customer Value": 197.64,
+                "Churn": 0,
+            },
+        ],
+    )
+    pd.testing.assert_frame_equal(normalize_input(record), record)
+
+
+def test_input_normalization_keeps_missing_values_untouched():
+    record = pd.DataFrame({"Age": [np.nan], "Status": [1]})
+    normalized = normalize_input(record)
+    assert pd.isna(normalized.loc[0, "Age"])
+    assert normalized.loc[0, "Status"] == 1
+
 
 def test_filter_training_rows_only_removes_rows(toy_contract, toy_frame):
     with_missing = toy_frame.copy()
@@ -98,6 +141,26 @@ def test_filter_training_rows_only_removes_rows(toy_contract, toy_frame):
     assert list(filtered.columns) == list(with_missing.columns)
     pd.testing.assert_frame_equal(filtered, with_missing.loc[filtered.index])
 
+def test_filter_training_rows_removes_exact_duplicates_keeping_first(toy_contract, toy_frame):
+    duplicated = pd.concat([toy_frame, toy_frame.iloc[[0, 5]]], ignore_index=True)
+    filtered = filter_training_rows(duplicated, toy_contract)
+    assert len(filtered) == len(toy_frame)
+    assert list(filtered.index) == list(toy_frame.index)
+    pd.testing.assert_frame_equal(filtered, duplicated.loc[filtered.index])
+
+
+def test_filter_training_rows_keeps_rows_that_differ_only_in_target(toy_contract, toy_frame):
+    """To nie są dokładne duplikaty — różny target oznacza różne rekordy."""
+    flipped = toy_frame.iloc[[0]].assign(label="no")
+    data = pd.concat([toy_frame.iloc[[0]], flipped], ignore_index=True)
+    assert len(filter_training_rows(data, toy_contract)) == 2
+
+
+def test_filter_training_rows_does_not_mutate_input(toy_contract, toy_frame):
+    duplicated = pd.concat([toy_frame, toy_frame.iloc[[0]]], ignore_index=True)
+    before = duplicated.copy(deep=True)
+    filter_training_rows(duplicated, toy_contract)
+    pd.testing.assert_frame_equal(duplicated, before)
 
 def test_sample_rows_keeps_order_and_minimum_positives(toy_frame):
     y = (toy_frame["label"] == "yes").astype(int)
@@ -111,3 +174,5 @@ def test_column_names_and_target_classes():
     frame = normalize_column_names(pd.DataFrame(columns=["Call  Failure", " Age "]))
     assert list(frame.columns) == ["Call Failure", "Age"]
     assert target_classes(pd.Series([1, 0, 1.0, None])) == ["0", "1"]
+
+
