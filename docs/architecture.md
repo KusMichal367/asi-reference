@@ -47,11 +47,48 @@ gotowy — sprawdza to `python scripts/check_dod.py`.
 
 <!-- DIAGRAM-V0:START -->
 ```mermaid
-flowchart LR
-    data["TODO: źródło danych"] --> model["TODO: kolejne elementy systemu"]
+flowchart TD
+    subgraph DATA["Dane i kontrakt (S1, gotowe)"]
+        SRC["UCI Iranian Churn, licencja CC BY 4.0<br/>scripts/download_data.py -> data/01_raw/iranian_churn/<br/>poza Gitem, SHA-256 w karcie projektu"]
+        CONTRACT["Kontrakt danych<br/>datasets.yaml (stały kontrakt kursu) + project.yaml (decyzje zespołu)"]
+        SAMPLE["data/01_raw/sample.csv<br/>próbka CI"]
+    end
+
+    subgraph PREP["src/asi_project/data.py (S1, gotowe)"]
+        NORM["1. input normalization<br/>normalize_input(), inference-safe"]
+        FILT["2. training-only filtering<br/>filter_training_rows()"]
+    end
+
+    subgraph TRAIN["Trening (S1 notebook 02 gotowe, S2 kedro run planowane)"]
+        SPLIT["split train/test<br/>stratified_random"]
+        PIPE["3. model preprocessing w sklearn Pipeline<br/>imputacja, skalowanie, one-hot<br/>+ LogisticRegression (model.py)"]
+        EVAL["porównanie z DummyClassifier<br/>-> metrics.json"]
+    end
+
+    ART["Pakiet modelu + metadata.json<br/>W&B, Model Card (S3, planowane)"]
+
+    subgraph SERVE["Serving (S4 i S5, planowane)"]
+        UI["UI Streamlit<br/>użytkownik systemu"]
+        API["API z tokenem<br/>normalize_input() -> Pipeline.predict_proba()"]
+    end
+
+    DB[("Postgres, zapis predykcji<br/>(S4 i S5, planowane)")]
+    CLOUD["Docker, docker compose, Cloud Run,<br/>Secret Manager, logi (S4 do S6, planowane)"]
+
+    SRC --> NORM
+    CONTRACT -.-> NORM
+    SAMPLE -. "pytest / CI" .-> NORM
+    NORM --> FILT --> SPLIT --> PIPE --> EVAL
+    PIPE --> ART
+    ART -- "model wczytany raz przy starcie" --> API
+    UI -- "dane jednego klienta" --> API
+    API -- "prawdopodobieństwo odejścia (Churn = 1)" --> UI
+    API --> DB
+    API -.-> CLOUD
+    UI -.-> CLOUD
 ```
 
-TODO: krótki opis diagramu (3–5 zdań).
+Dane Iranian Churn pobieramy skryptem z UCI, a kontrakt danych (target Churn, klasa pozytywna 1, ALLOWED FEATURES, split stratified_random) jest zapisany w datasets.yaml i project.yaml. Trzy typy przetwarzania są rozdzielone: normalize_input() działa zarówno w treningu, jak i w API dla pojedynczego rekordu, filter_training_rows() działa tylko przy budowie zbioru treningowego, a model preprocessing (wszystko, co wymaga fit) jest wewnątrz sklearn Pipeline, więc zapisuje się razem z modelem. Po Sprincie 1 gotowe są dane, kontrakt, przygotowanie danych i baseline; artefakt modelu, API, UI, persistence i chmura powstaną w kolejnych sprintach. Użytkownik wysyła przez UI dane jednego klienta i dostaje prawdopodobieństwo jego odejścia, a API zapisuje predykcję w Postgresie.
 <!-- DIAGRAM-V0:END -->
 
 ## Historia zmian architektury
