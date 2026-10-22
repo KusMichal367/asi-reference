@@ -175,18 +175,6 @@ def _strip_text(value: object) -> object:
 
 
 def normalize_input(df: pd.DataFrame) -> pd.DataFrame:
-    """Input normalization — bezpieczne ujednolicenie wejścia (trening i później API).
-
-    Zasady sprawdzane testami (tests/test_project.py):
-    - wynik dla rekordu nie zależy od innych rekordów (działa na pojedynczym rekordzie),
-    - nie używa targetu ani statystyk zbioru (żadnych median, średnich ani ``fit``),
-    - jest idempotentna: ponowne wywołanie nie zmienia wyniku.
-
-    Domyślnie przycina białe znaki w wartościach tekstowych i zamienia puste napisy na brak.
-
-    TODO (S1): po EDA dopisz reguły dla swojego datasetu, np. oczywiste reprezentacje braków
-    albo konwersję typów. Każdą regułę uzasadnij w notebooku 01.
-    """
     normalized = df.copy()
     for column in normalized.columns:
         if is_text_column(normalized[column]):
@@ -197,14 +185,19 @@ def normalize_input(df: pd.DataFrame) -> pd.DataFrame:
 def filter_training_rows(df: pd.DataFrame, contract: DatasetContract) -> pd.DataFrame:
     """Training-only filtering — tylko przy przygotowaniu danych treningowych.
 
-    Domyślnie usuwa rekordy bez targetu (nie da się na nich uczyć ani oceniać modelu).
-    Funkcja może tylko usuwać rekordy; nie dodaje ich i nie zmienia wartości.
+    Reguły:
+    - usuwa rekordy bez targetu (nie da się na nich uczyć ani oceniać modelu),
+    - usuwa dokładne duplikaty wierszy (zostaje pierwsze wystąpienie).
 
-    TODO (S1): po EDA zdecyduj, czy potrzebne są inne reguły (np. dokładne duplikaty).
-    Decyzję i jej powód zapisz w notebooku 01.
+    Dokładne duplikaty (identyczne cechy i target, w tym czasy rozmów w sekundach) to prawdopodobnie
+    zduplikowane wpisy. Zostawione w danych mogłyby trafić jednocześnie do zbioru treningowego
+    i testowego, zawyżając metryki (data leakage). Decyzja wynika z EDA (notebook 01, sekcja 7).
+
+    Funkcja może tylko usuwać rekordy; nie dodaje ich i nie zmienia wartości ani indeksu.
     """
     keep = df[contract.target].map(label_text).notna()
-    return df.loc[keep].copy()
+    labeled = df.loc[keep]
+    return labeled.loc[~labeled.duplicated(keep="first")].copy()
 
 
 # --- X / y i split -----------------------------------------------------------------------------
