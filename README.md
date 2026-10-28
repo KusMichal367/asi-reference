@@ -21,10 +21,10 @@ powiązane, ale nie zawierają gotowych rozwiązań ani zadań do wykonania wcze
 | Źródło, licencja i cytowanie (DOI) | UCI Machine Learning Repository,<br> Licencja CC BY 4.0,<br> DOI  https://doi.org/10.24432/C5JW3Z|
 | Data pobrania danych | 20.10.2026 |
 | SHA-256 pliku danych (`fingerprint.json`) | 90d5fb6bd1630cd4de4b4d28fcf8b4cb92a8f6ab7484605b0799d47386f7dbe1 |
-| Dane osobowe w zbiorze i sposób postępowania | Zbiór zawiera dane dotyczące klientów operatora telekomunikacyjnego. Wsród nich znajdują się między innymi wiek, czas korzystania z usług i liczba połączeń.<BR> Dozwolone cechy nie zawierają bezpośrednich identyfikatorów klientów. Dane będą wykorzystywane wyłącznie do celów edukacyjnych.<Br> Pełny dataset nie będzie umieszczany w repozytorium Git, a prezentacje systemu będą wykorzystywać dane przykładowe. |
-| Target i klasa pozytywna | Churn jest binarną cechą określająca odejście klienta i naszym targetem. <br>Klasa pozytywna: 1 (klient odszedł)<br> klasa negatywna: 0 (klient pozostał). |
+| Dane osobowe w zbiorze i sposób postępowania | Zbiór zawiera dane dotyczące klientów operatora telekomunikacyjnego. Wśród nich znajdują się między innymi wiek, czas korzystania z usług i liczba połączeń.<BR> Dozwolone cechy nie zawierają bezpośrednich identyfikatorów klientów. Dane będą wykorzystywane wyłącznie do celów edukacyjnych.<Br> Pełny dataset nie będzie umieszczany w repozytorium Git, a prezentacje systemu będą wykorzystywać dane przykładowe. |
+| Target i klasa pozytywna | Churn jest binarną cechą określającą odejście klienta i naszym targetem. <br>Klasa pozytywna: 1 (klient odszedł)<br> klasa negatywna: 0 (klient pozostał). |
 | Metryka główna i uzasadnienie | Jako metrykę główną wybieramy F1-score, ponieważ uwzględnia ona zarówno precision jak i recall. Jest odpowiednia do oceny modelu na niezbalansowanym zbiorze, w którym klasa pozytywna stanowi 15,71% obserwacji |
-| Użytkownik systemu i decyzja, którą wspiera model | Potencjalnym użytkownikiem systemu jest analityk operatora telekomunikacyjnego. Model pomagałby mu przewidując ryzyko odejścia klienta na podstawie jego dotychczasowej aktywności i wspierałby decyzję o podjęciu działań mających na celu utrzymanie klientów. |
+| Użytkownik systemu i decyzja, którą wspiera model | Potencjalnym użytkownikiem systemu jest analityk operatora telekomunikacyjnego. Model pomagałby mu przewidywać ryzyko odejścia klienta na podstawie jego dotychczasowej aktywności i wspierałby decyzję o podjęciu działań mających na celu utrzymanie klientów. |
 <!-- KARTA-PROJEKTU:END -->
 
 ## Mapa projektu
