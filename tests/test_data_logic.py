@@ -88,6 +88,7 @@ def test_default_input_normalization_rules_and_idempotence(toy_frame):
     assert normalized["num"].equals(toy_frame["num"])
     pd.testing.assert_frame_equal(normalize_input(normalized), normalized)
 
+
 def test_input_normalization_single_record_matches_batch(toy_frame):
     batch = normalize_input(toy_frame)
     for position in range(len(toy_frame)):
@@ -141,6 +142,7 @@ def test_filter_training_rows_only_removes_rows(toy_contract, toy_frame):
     assert list(filtered.columns) == list(with_missing.columns)
     pd.testing.assert_frame_equal(filtered, with_missing.loc[filtered.index])
 
+
 def test_filter_training_rows_removes_exact_duplicates_keeping_first(toy_contract, toy_frame):
     duplicated = pd.concat([toy_frame, toy_frame.iloc[[0, 5]]], ignore_index=True)
     filtered = filter_training_rows(duplicated, toy_contract)
@@ -162,6 +164,7 @@ def test_filter_training_rows_does_not_mutate_input(toy_contract, toy_frame):
     filter_training_rows(duplicated, toy_contract)
     pd.testing.assert_frame_equal(duplicated, before)
 
+
 def test_sample_rows_keeps_order_and_minimum_positives(toy_frame):
     y = (toy_frame["label"] == "yes").astype(int)
     sample = sample_rows(toy_frame, y, n_rows=12, min_positive=5, seed=0)
@@ -174,5 +177,3 @@ def test_column_names_and_target_classes():
     frame = normalize_column_names(pd.DataFrame(columns=["Call  Failure", " Age "]))
     assert list(frame.columns) == ["Call Failure", "Age"]
     assert target_classes(pd.Series([1, 0, 1.0, None])) == ["0", "1"]
-
-
