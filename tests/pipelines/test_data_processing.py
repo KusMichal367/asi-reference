@@ -8,13 +8,16 @@ from asi_project.pipelines.data_processing.nodes import (
     validate_data,
 )
 
+
 @pytest.fixture
 def raw_data(project) -> pd.DataFrame:
     return pd.read_csv(project.config.ci_sample_path)
 
+
 @pytest.fixture
 def prepared_data(raw_data: pd.DataFrame) -> pd.DataFrame:
     return filter_data(normalize_data(validate_data(raw_data)))
+
 
 def test_validate_data_accepts_valid_sample(raw_data: pd.DataFrame, project) -> None:
     result = validate_data(raw_data)
@@ -31,11 +34,13 @@ def test_validate_data_normalizes_column_names(raw_data: pd.DataFrame) -> None:
     assert "Call Failure" in result.columns
     assert "Call  Failure " not in result.columns
 
+
 def test_validate_data_rejects_missing_target(raw_data: pd.DataFrame, project) -> None:
     broken = raw_data.drop(columns=[project.contract.target])
 
     with pytest.raises(DataContractError):
         validate_data(broken)
+
 
 def test_normalize_data_strips_text_and_keeps_rows() -> None:
     df = pd.DataFrame({"text": ["  a ", "b  ", None], "num": [1, 2, 3]})
@@ -47,6 +52,7 @@ def test_normalize_data_strips_text_and_keeps_rows() -> None:
     assert len(result) == len(df)
     # node nie modyfikuje wejścia
     assert df["text"].iloc[0] == "  a "
+
 
 def test_filter_data_removes_duplicates_and_missing_target(
     prepared_data: pd.DataFrame, project
@@ -61,6 +67,7 @@ def test_filter_data_removes_duplicates_and_missing_target(
     assert len(result) == len(prepared_data)
     assert result[target].notna().all()
     assert not result.duplicated().any()
+
 
 def test_filter_data_only_removes_rows(prepared_data: pd.DataFrame, raw_data: pd.DataFrame) -> None:
     assert len(prepared_data) <= len(raw_data)
