@@ -1,0 +1,5 @@
+
+
+raw_data:
+  type: pandas.CSVDataset
+  filepath: data/01_raw/sample.csv
