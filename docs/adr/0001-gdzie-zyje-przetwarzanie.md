@@ -3,7 +3,7 @@
 - **Status:** proponowany
 - **Sprint:** S2
 - **Autor:** Igor Bukowski
-- **Recenzent:** TODO (inna osoba z zespołu)
+- **Recenzent:** Jakub Sankowski (JakubS12)
 
 ## Kontekst
 
