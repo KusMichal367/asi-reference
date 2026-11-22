@@ -173,3 +173,35 @@ def predict(model: Any, metadata: dict[str, Any], df: pd.DataFrame) -> pd.DataFr
         {"prediction": (probability >= 0.5).astype(int), "probability": probability},
         index=X.index,
     )
+
+
+# -=-=-= W&B Artifact -=-=-=
+
+
+def log_package_artifact(
+    package_dir: Path | str,
+    *,
+    project: str,
+    entity: str | None = None,
+    name: str = "churn-model",
+    aliases: tuple[str, ...] = ("production",),
+) -> str:
+
+    import wandb
+
+    package_dir = Path(package_dir)
+    _, metadata = load_package(package_dir)
+
+    with wandb.init(project=project, entity=entity, job_type="package-model") as run:
+        artifact = wandb.Artifact(name=name, type="model", metadata=metadata)
+        artifact.add_dir(str(package_dir))
+        run.log_artifact(artifact, aliases=list(aliases))
+        return f"{run.entity}/{run.project}/{name}"
+
+
+def download_package_artifact(reference: str, target_dir: Path | str | None = None) -> Path:
+
+    import wandb
+
+    artifact = wandb.Api().artifact(reference, type="model")
+    return Path(artifact.download(root=str(target_dir) if target_dir else None))
