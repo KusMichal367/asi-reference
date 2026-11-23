@@ -86,3 +86,13 @@ def test_evaluate_models_returns_valid_metrics(split, trained, project) -> None:
     assert {"dummy", "logistic_regression"} <= set(record["models"])
     for metrics in record["models"].values():
         assert 0.0 <= metrics["f1"] <= 1.0
+
+
+def test_wandb_node_is_registered():
+    from asi_project.pipelines.data_science.pipeline import create_pipeline
+
+    pipeline = create_pipeline()
+
+    node_names = [node.name for node in pipeline.nodes]
+
+    assert "log_baseline_run" in node_names
