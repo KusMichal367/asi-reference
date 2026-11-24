@@ -1,6 +1,6 @@
 from kedro.pipeline import Pipeline, node, pipeline
 
-from .nodes import evaluate_models, split_data, train_models
+from .nodes import evaluate_models, log_baseline_run, split_data, train_models
 
 
 def create_pipeline(**kwargs: object) -> Pipeline:
@@ -31,6 +31,12 @@ def create_pipeline(**kwargs: object) -> Pipeline:
                 ],
                 outputs="metrics",
                 name="evaluate_models",
+            ),
+            node(
+                func=log_baseline_run,
+                inputs="metrics",
+                outputs="wandb_tracking_results",
+                name="log_baseline_run",
             ),
         ]
     )

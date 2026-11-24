@@ -81,3 +81,20 @@ def evaluate_models(
         raise ValueError("problem z metrykami: " + "; ".join(problems))
 
     return record
+
+
+def log_baseline_run(metrics: dict[str, Any]) -> dict[str, str | None]:
+    import os
+
+    from asi_project.experiment_tracking import log_metrics_to_wandb
+
+    mode = os.getenv("WANDB_MODE", "disabled")
+    project = os.getenv("WANDB_PROJECT")
+
+    if not project:
+        if mode != "disabled":
+            raise ValueError("Nie ustawiono WANDB_PROJECT")
+
+        project = "asi-churn-ci"
+
+    return log_metrics_to_wandb(metrics, project=project, entity=os.getenv("WANDB_ENTITY"))
