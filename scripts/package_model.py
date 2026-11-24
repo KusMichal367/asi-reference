@@ -3,6 +3,8 @@
 import argparse
 import os
 import pickle
+from pathlib import Path
+from typing import Any
 
 from asi_project.config import get_contract, load_project_config
 from asi_project.data import raw_data_path
@@ -14,10 +16,28 @@ from asi_project.model_package import (
     save_package,
 )
 
+MODEL_FILES = {
+    "logistic_regression": "data/06_models/trained_model.pkl",
+    "dummy": "data/06_models/dummy_model.pkl",
+}
+
+
+def load_model(path: Path) -> tuple[Any, str]:
+    """Katalog = TabularPredictor (AutoGluon), plik = model sklearn (pickle z Kedro)."""
+
+    if path.is_dir():
+        from autogluon.tabular import TabularPredictor
+
+        return TabularPredictor.load(str(path)), "autogluon"
+    with open(path, "rb") as handle:
+        return pickle.load(handle), "sklearn"
+
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--model", default="data/06_models/trained_model.pkl")
+    parser.add_argument(
+        "--model", help="plik .pkl albo katalog AutoGluona (domyślnie wg --model-name)"
+    )
     parser.add_argument("--metrics", default="data/08_reporting/metrics.json")
     parser.add_argument("--model-name", default="logistic_regression")
     parser.add_argument("--out", default="data/06_models/package")
@@ -33,17 +53,27 @@ def main(argv: list[str] | None = None) -> int:
     config = load_project_config()
     contract = get_contract(config)
 
-    with open(args.model, "rb") as handle:
-        model = pickle.load(handle)
-    record = load_metrics(args.metrics)
+    model_path = args.model or MODEL_FILES.get(args.model_name)
+    if model_path is None:
+        parser.error(f"podaj --model dla modelu {args.model_name}")
+    model, model_format = load_model(Path(model_path))
 
-    data_file = raw_data_path(config, contract)
-    if record.get("data_mode") == "sample" or not data_file.exists():
+    record = load_metrics(args.metrics)
+    if args.model_name not in record["models"]:
+        parser.error(f"brak metryk modelu {args.model_name} w {args.metrics}")
+    if list(record["features"]) != list(config.model_features):
+        parser.error("cechy w metrics.json różnią się od project.yaml - uruchom trening ponownie")
+
+    if record["data_mode"] == "full":
+        data_file = raw_data_path(config, contract)
+        if not data_file.exists():
+            parser.error(f"brak pełnych danych {data_file} - fingerprint nie może być policzony")
+    else:
         data_file = config.ci_sample_path
 
     metadata = build_metadata(
         model_name=args.model_name,
-        model_format="sklearn",
+        model_format=model_format,
         features=config.model_features,
         target=contract.target,
         positive_class=contract.positive_class,

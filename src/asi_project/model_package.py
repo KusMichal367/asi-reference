@@ -123,7 +123,10 @@ def save_package(model: Any, package_dir: Path | str, metadata: dict[str, Any]) 
     if metadata["model_format"] == "sklearn":
         joblib.dump(model, package_dir / SKLEARN_FILE)
     else:
-        model.clone(path=str(package_dir / AUTOGLUON_DIR), return_clone=False, dirs_exist_ok=True)
+        model.save()
+        model.clone_for_deployment(
+            path=str(package_dir / AUTOGLUON_DIR), return_clone=False, dirs_exist_ok=True
+        )
 
     (package_dir / METADATA_FILE).write_text(
         json.dumps(metadata, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
@@ -162,15 +165,18 @@ def predict(model: Any, metadata: dict[str, Any], df: pd.DataFrame) -> pd.DataFr
         raise ModelPackageError(f"brak cech wejściowych: {missing}")
 
     X = df[metadata["features"]]
+    labels = model.predict(X)
     proba = model.predict_proba(X)
     if isinstance(proba, pd.DataFrame):
         positive = proba[1] if 1 in proba.columns else proba.iloc[:, -1]
     else:
         positive = proba[:, 1]
 
-    probability = pd.Series(positive, index=X.index, dtype=float)
     return pd.DataFrame(
-        {"prediction": (probability >= 0.5).astype(int), "probability": probability},
+        {
+            "prediction": pd.Series(labels, index=X.index).astype(int),
+            "probability": pd.Series(positive, index=X.index, dtype=float),
+        },
         index=X.index,
     )
 
