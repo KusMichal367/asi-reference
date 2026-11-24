@@ -10,3 +10,16 @@ split:
 
 
 data_mode: full
+
+autogluon:
+  eval_metric: f1
+  models_dir: data/06_models/autogluon
+  experiments:
+    medium_quality_60s:
+      presets: medium_quality
+      time_limit: 60
+      verbosity: 1
+    good_quality_120s:
+      presets: good_quality
+      time_limit: 120
+      verbosity: 1
