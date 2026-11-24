@@ -31,6 +31,8 @@ dist/
 .ruff_cache/
 .ipynb_checkpoints/
 .venv/
+wandb/
+artifacts/
 
 # --- Systemowe / edytory ---------------------------------------------------
 .DS_Store
