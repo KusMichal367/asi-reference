@@ -1,6 +1,7 @@
 """Buduje pakiet modelu z wyników pipeline'u i (opcjonalnie) wysyła go do W&B."""
 
 import argparse
+import os
 import pickle
 
 from asi_project.config import get_contract, load_project_config
@@ -20,8 +21,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--metrics", default="data/08_reporting/metrics.json")
     parser.add_argument("--model-name", default="logistic_regression")
     parser.add_argument("--out", default="data/06_models/package")
-    parser.add_argument("--wandb-project", default=None, help="bez tej opcji nic nie trafia do W&B")
-    parser.add_argument("--wandb-entity", default=None)
+    parser.add_argument(
+        "--wandb-project",
+        default=os.getenv("WANDB_PROJECT"),
+        help="domyślnie WANDB_PROJECT; bez projektu nie trafi nic do W&B",
+    )
+    parser.add_argument("--wandb-entity", default=os.getenv("WANDB_ENTITY"))
     parser.add_argument("--alias", action="append", default=None)
     args = parser.parse_args(argv)
 
@@ -49,7 +54,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Pakiet zapisany: {package_dir}")
 
     if args.wandb_project:
-        aliases = tuple(args.alias or ["production"])
+        aliases = tuple(args.alias or ["staging"])
         name = log_package_artifact(
             package_dir, project=args.wandb_project, entity=args.wandb_entity, aliases=aliases
         )
