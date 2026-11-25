@@ -1,6 +1,12 @@
-"""Buduje pakiet modelu z wyników pipeline'u i (opcjonalnie) wysyła go do W&B."""
+"""Buduje pakiet modelu z wyników pipeline'u i (opcjonalnie) wysyła go do W&B.
+
+Model produkcyjny (wynik `kedro run --pipeline model_selection`):
+    python scripts/package_model.py --selection data/08_reporting/selected_model.json \
+        --alias production
+"""
 
 import argparse
+import json
 import os
 import pickle
 from pathlib import Path
@@ -34,6 +40,9 @@ def load_model(path: Path) -> tuple[Any, str]:
 
 
 def main(argv: list[str] | None = None) -> int:
+    from asi_project.experiment_tracking import load_local_env
+
+    load_local_env()  # WANDB_PROJECT/WANDB_ENTITY/WANDB_API_KEY z .env
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--model", help="plik .pkl albo katalog AutoGluona (domyślnie wg --model-name)"
@@ -48,10 +57,17 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--wandb-entity", default=os.getenv("WANDB_ENTITY"))
     parser.add_argument("--alias", action="append", default=None)
+    parser.add_argument(
+        "--selection",
+        help="selected_model.json z pipeline'u model_selection (zastępuje --model/--metrics)",
+    )
     args = parser.parse_args(argv)
 
     config = load_project_config()
     contract = get_contract(config)
+
+    if args.selection:
+        return package_selection(args, config, contract, parser)
 
     model_path = args.model or MODEL_FILES.get(args.model_name)
     if model_path is None:
@@ -82,7 +98,41 @@ def main(argv: list[str] | None = None) -> int:
     )
     package_dir = save_package(model, args.out, metadata)
     print(f"Pakiet zapisany: {package_dir}")
+    return upload(package_dir, args)
 
+
+def package_selection(args: argparse.Namespace, config: Any, contract: Any, parser: Any) -> int:
+    """Pakiet z wybranego modelu: ten sam model, metryki i fingerprint co w benchmarku."""
+    selection = json.loads(Path(args.selection).read_text(encoding="utf-8"))
+    name = selection["selected"]
+    model_path = args.model or selection.get("source_model_path") or MODEL_FILES.get(name)
+    if model_path is None:
+        parser.error(f"nie wiem, gdzie leży model {name} - podaj --model")
+    model, model_format = load_model(Path(model_path))
+    if model_format != selection["model_format"]:
+        parser.error(f"{model_path} to {model_format}, a wybrano {selection['model_format']}")
+
+    metadata = build_metadata(
+        model_name=name,
+        model_format=model_format,
+        features=config.model_features,
+        target=contract.target,
+        positive_class=contract.positive_class,
+        metrics=selection["metrics"],
+        data_fingerprint=selection["data_fingerprint"],
+    )
+    metadata["best_model"] = selection["best_model"]
+    metadata["selection"] = {
+        "rule": selection["rule"],
+        "deployment": selection["deployment"],
+        "decision": "docs/adr/0002-wybor-modelu-produkcyjnego.md",
+    }
+    package_dir = save_package(model, args.out, metadata)
+    print(f"Pakiet zapisany: {package_dir} ({name}, {selection['best_model']})")
+    return upload(package_dir, args)
+
+
+def upload(package_dir: Path, args: argparse.Namespace) -> int:
     if args.wandb_project:
         aliases = tuple(args.alias or ["staging"])
         name = log_package_artifact(

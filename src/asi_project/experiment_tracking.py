@@ -164,3 +164,60 @@ def log_autogluon_experiments_to_wandb(
             }
 
     return runs
+
+
+def log_model_selection_to_wandb(
+    benchmark: dict[str, Any],
+    selection: dict[str, Any],
+    comparison: Any,
+    *,
+    project: str,
+    entity: str | None = None,
+    root: Path = PROJECT_ROOT,
+) -> dict[str, str | None]:
+    """Run W&B z tabelą porównawczą kandydatów i decyzją o modelu produkcyjnym."""
+    dataset = str(benchmark["dataset"])
+    data_mode = str(benchmark["data_mode"])
+    configuration = {
+        "dataset": dataset,
+        "data_mode": data_mode,
+        "target": benchmark["target"],
+        "positive_class": benchmark["positive_class"],
+        "features": benchmark["features"],
+        "test_size": benchmark["split"]["test_size"],
+        "random_state": benchmark["split"]["random_state"],
+        "n_test": benchmark["split"]["n_test"],
+        "git_sha": get_git_sha(root),
+        "data_fingerprint": get_data_fp(dataset, data_mode, root),
+        "selection_rule": selection["rule"],
+        "measurement": benchmark["measurement"],
+    }
+    numeric = (
+        "f1",
+        "precision",
+        "recall",
+        "latency_single_p50_ms",
+        "latency_single_p95_ms",
+        "batch_ms_per_row",
+        "artifact_size_mb",
+        "load_memory_mb",
+        "load_time_s",
+    )
+
+    with wandb.init(
+        project=project,
+        entity=entity,
+        job_type="model-selection",
+        name=f"model-selection-{data_mode}",
+        config=configuration,
+        mode=os.getenv("WANDB_MODE", "disabled"),
+    ) as run:
+        table = wandb.Table(dataframe=comparison.astype({"train_time_s": "float64"}))
+        run.log({"model_comparison": table})
+        for row in benchmark["candidates"]:
+            for key in numeric:
+                if row.get(key) is not None:
+                    run.summary[f"{row['candidate']}/{key}"] = float(row[key])
+        run.summary["selected_model"] = selection["selected"]
+        run.summary["selected_best_model"] = selection["best_model"]
+        return {"run_id": run.id, "run_url": run.url}

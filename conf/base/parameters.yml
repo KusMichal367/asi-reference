@@ -23,3 +23,17 @@ autogluon:
       presets: good_quality
       time_limit: 120
       verbosity: 1
+
+# Sprint 3 — benchmark i wybór modelu produkcyjnego (pipeline model_selection).
+# Reguła: odrzuć kandydatów łamiących limity → shortlista: f1 >= najlepsze f1 - tolerancja
+# → z shortlisty wygrywa najtańszy we wdrożeniu (kolejność tie_breakers). Uzasadnienie: ADR-2.
+model_selection:
+  primary_metric: f1
+  metric_tolerance: 0.02
+  limits:
+    max_latency_single_p95_ms: 100   # predykcja 1 wiersza w API (Sprint 4)
+    max_artifact_size_mb: 100        # obraz Dockera i W&B Artifact
+    max_load_memory_mb: 1024         # mała instancja w chmurze (Sprint 6)
+  tie_breakers: [latency_single_p95_ms, artifact_size_mb, load_memory_mb]
+  latency_repeats: 200
+  candidates_dir: data/06_models/candidates

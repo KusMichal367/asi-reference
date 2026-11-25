@@ -12,6 +12,8 @@ from kedro.pipeline import Pipeline
 def register_pipelines() -> dict[str, Pipeline]:
     """Wykryj pipeline'y z ``src/asi_project/pipelines/``."""
     pipelines = find_pipelines()
-    default_names = [name for name in pipelines if name != "autogluon"]
+    # Eksperymenty i wybór modelu uruchamiamy jawnie: kedro run --pipeline <nazwa>.
+    opt_in = {"autogluon", "model_selection"}
+    default_names = [name for name in pipelines if name not in opt_in]
     pipelines["__default__"] = sum((pipelines[name] for name in default_names), Pipeline([]))
     return pipelines
