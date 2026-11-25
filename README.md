@@ -130,6 +130,25 @@ Od Sprintu 2 trening uruchamia pipeline Kedro: surowe dane → walidacja → inp
 Konfiguracja: `conf/base/catalog.yml` (wejścia i wyjścia), `conf/base/parameters.yml`
 (`test_size`, `random_state`). Testy nodów: `pytest tests/pipelines`. Decyzja o podziale
 przetwarzania: [`docs/adr/0001-gdzie-zyje-przetwarzanie.md`](docs/adr/0001-gdzie-zyje-przetwarzanie.md).
+
+### Sprint 3: eksperymenty, wybór modelu i `production`
+
+Wymaga `requirements/preflight-s3.txt` i pliku `.env` (wzór: `.env.example`).
+
+```bash
+kedro run                              # 1. baseline (+ run W&B)
+kedro run --pipeline autogluon         # 2. konfiguracje AutoGluona (+ runy W&B)
+kedro run --pipeline model_selection   # 3. benchmark pakietów + wybór modelu (+ run W&B)
+python scripts/package_model.py --selection data/08_reporting/selected_model.json --alias production
+python scripts/smoke_model.py --artifact ENTITY/PROJEKT/churn-model:production   # 4. smoke
+```
+
+Krok 3 pakuje każdego kandydata wspólną funkcją `save_package` i mierzy go w świeżym procesie
+(F1, p50/p95 predykcji 1 wiersza, rozmiar pakietu, pamięć po wczytaniu). Wybór robi jawna
+reguła z `conf/base/parameters.yml` (`model_selection`). Wyniki: `data/08_reporting/`
+(`model_comparison.csv`, `model_benchmark.json`, `selected_model.json`).
+Decyzja: [ADR-2](docs/adr/0002-wybor-modelu-produkcyjnego.md), opis modelu:
+[Model Card](docs/model_card.md).
 ## Gałęzie, Pull Requesty i review
 
 - Gałąź `main` jest chroniona. Każda zmiana trafia przez gałąź i Pull Request.

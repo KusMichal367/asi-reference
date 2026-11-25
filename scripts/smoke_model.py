@@ -37,6 +37,9 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.artifact:
+        from asi_project.experiment_tracking import load_local_env
+
+        load_local_env()  # WANDB_API_KEY z .env; bez tego W&B pyta o logowanie
         package_dir = download_package_artifact(args.artifact)
         print(f"Pobrano: {args.artifact} -> {package_dir}")
     else:
