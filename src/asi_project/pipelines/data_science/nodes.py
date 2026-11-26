@@ -86,8 +86,10 @@ def evaluate_models(
 def log_baseline_run(metrics: dict[str, Any]) -> dict[str, str | None]:
     import os
 
-    from asi_project.experiment_tracking import log_metrics_to_wandb
+    from asi_project.experiment_tracking import load_local_env, log_metrics_to_wandb
 
+    if "WANDB_MODE" not in os.environ:
+        load_local_env()
     mode = os.getenv("WANDB_MODE", "disabled")
     project = os.getenv("WANDB_PROJECT")
 

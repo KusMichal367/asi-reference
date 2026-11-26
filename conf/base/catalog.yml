@@ -29,11 +29,28 @@ metrics:
   filepath: data/08_reporting/metrics.json
   save_args:
     indent: 2
-    ensure_ascii: false
 
 autogluon_results:
   type: json.JSONDataset
   filepath: data/08_reporting/autogluon_results.json
   save_args:
     indent: 2
-    ensure_ascii: false
+
+model_benchmark:
+  type: json.JSONDataset
+  filepath: data/08_reporting/model_benchmark.json
+  save_args:
+    indent: 2
+
+selected_model:
+  type: json.JSONDataset
+  filepath: data/08_reporting/selected_model.json
+  save_args:
+    indent: 2
+
+model_comparison:
+  type: pandas.CSVDataset
+  filepath: data/08_reporting/model_comparison.csv
+  save_args:
+    index: false
+    lineterminator: "\n"  # bez tego na Windows powstaje \r\r\n
